@@ -36,10 +36,10 @@ bool login(){
         if (current_field == 0) {
             wattron(login_win, A_STANDOUT); // Highlight current field
             mvwprintw(login_win, 4, 12, "          ");
-            mvwprintw(login_win, 4, 12, username);
+            mvwprintw(login_win, 4, 12, "%s", username);
             wattroff(login_win, A_STANDOUT);
         } else {
-            mvwprintw(login_win, 4, 12, username);
+            mvwprintw(login_win, 4, 12, "%s", username);
         }
 
         // Print password field
