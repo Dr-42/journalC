@@ -1,16 +1,18 @@
 #include "login.h"
 #include "exit_journal.h"
 
+#include <curses.h>
 #include <string.h>
 #include <ncurses.h>
 
+#define LOGIN_SCREEN_WIDTH 60
+#define LOGIN_SCREEN_HEIGHT 10
+
 bool login(){
     // Create window for login screen
-    int height = 10;
-    int width = 60;
-    int starty = (LINES - height) / 2;
-    int startx = (COLS - width) / 2;
-    WINDOW *login_win = newwin(height, width, starty, startx);
+    int starty = (LINES - LOGIN_SCREEN_HEIGHT) / 2;
+    int startx = (COLS - LOGIN_SCREEN_WIDTH) / 2;
+    WINDOW *login_win = newwin(LOGIN_SCREEN_HEIGHT, LOGIN_SCREEN_WIDTH, starty, startx);
     refresh();
 
     // Print login screen
@@ -28,39 +30,43 @@ bool login(){
     bool running = true;
     while (running) {
         // Print username field
-        const char *username_label = "Username: ";
-        const char *password_label = "Password: ";
         const char *login_button = "[Login]";
         const char *username_field = "                               ";
         const char *password_field = "*******************************";
 
-        mvwprintw(login_win, 4, 2, "%s", username_label);
+        //X Center the fields
+        int username_field_x = (LOGIN_SCREEN_WIDTH - strlen(username_field)) / 2;
+        int password_field_x = (LOGIN_SCREEN_WIDTH - strlen(password_field)) / 2;
+        int login_button_x = (LOGIN_SCREEN_WIDTH - strlen(login_button)) / 2;
+
         if (current_field == 0) {
             wattron(login_win, A_STANDOUT); // Highlight current field
-            mvwprintw(login_win, 4, 12, "%s", username_field);
-            mvwprintw(login_win, 4, 12, "%s", username);
+            mvwprintw(login_win, 4, username_field_x, "%s", username_field);
+            // Print username at center of field
+            mvwprintw(login_win, 4 , username_field_x + (strlen(username_field) - strlen(username)) / 2, "%s", username);
             wattroff(login_win, A_STANDOUT);
         } else {
-            mvwprintw(login_win, 4, 12, "%s", username_field);
+            wattron(login_win, A_DIM); // Dim other fields
+            mvwprintw(login_win, 4 , username_field_x + (strlen(username_field) - strlen(username)) / 2, "%s", username);
+            wattroff(login_win, A_DIM);
         }
 
         // Print password field
-        mvwprintw(login_win, 6, 2, "%s", password_label);
         if (current_field == 1) {
             wattron(login_win, A_STANDOUT); // Highlight current field
-            mvwprintw(login_win, 6, 12, "%s", password_field);
+            mvwprintw(login_win, 6, password_field_x, "%s", password_field);
             // Print '*' characters for password
             for (int i = 0; i < strlen(password); i++) {
-                mvwprintw(login_win, 6, 12 + i, "*");
+                mvwprintw(login_win, 6, password_field_x + i, "*");
             }
             wattroff(login_win, A_STANDOUT);
         } else {
             // Print empty field for password
-            mvwprintw(login_win, 6, 12, "%s", password_field);
+            mvwprintw(login_win, 6, password_field_x, "%s", password_field);
         }
 
         // Print login button
-        mvwprintw(login_win, 8, 2, "%s", login_button);
+        mvwprintw(login_win, 8, login_button_x, "%s", login_button);
 
         // Refresh window
         wrefresh(login_win);
