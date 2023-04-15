@@ -1,16 +1,15 @@
 #include <ncurses.h>
 #include <string.h>
 
-int main() {
-    // Initialize ncurses
+void init_curses() {
     initscr();
     cbreak();
     noecho();
     curs_set(0);
-
-    // Enable keypad
     keypad(stdscr, TRUE);
+}
 
+bool login(){
     // Create window for login screen
     int height = 10;
     int width = 40;
@@ -82,7 +81,7 @@ int main() {
                     username[strlen(username) - 1] = '\0';
                 } else if (current_field == 1 && strlen(password) > 0) {
                     password[strlen(password) - 1
-                ] = '\0';
+                        ] = '\0';
                 }
                 break;
             case '\n':
@@ -99,12 +98,60 @@ int main() {
         }
     }
 
-    // Cleanup ncurses
+    // Check if login credentials are valid
+    if (strcmp(username, "admin") == 0 && strcmp(password, "password") == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+enum {
+    INVALID_LOGIN
+}Error;
+
+void edit(){
+    // Create window for edit screen
+    int height = 10;
+    int width = 40;
+    int starty = (LINES - height) / 2;
+    int startx = (COLS - width) / 2;
+    WINDOW *edit_win = newwin(height, width, starty, startx);
+    refresh();
+
+    // Print edit screen
+    box(edit_win, 0, 0);
+    mvwprintw(edit_win, 2, 2, "Welcome to My Edit System");
+    mvwprintw(edit_win, 4, 2, "This is the edit screen");
+    mvwprintw(edit_win, 6, 2, "Press any key to exit");
+    wrefresh(edit_win);
+
+    // Wait for user input
+    getch();
+}
+
+void exit_journal(int error){
+    //Show error in a popup
     endwin();
+    WINDOW *error_win = newwin(10, 40, (LINES - 10) / 2, (COLS - 40) / 2);
+    refresh();
+    box(error_win, 0, 0);
+    mvwprintw(error_win, 2, 2, "Error");
+    if (error == INVALID_LOGIN){
+        mvwprintw(error_win, 4, 2, "Invalid login credentials");
+    }
+    mvwprintw(error_win, 6, 2, "Press any key to exit");
+    wrefresh(error_win);
+    getch();
+}
 
-    // Print login credentials
-    printf("Username: %s\n", username);
-    printf("Password: %s\n", password);
-
+int main() {
+    init_curses();
+    if (login()){
+        edit();
+    } else {
+        exit_journal(INVALID_LOGIN);
+    }
+    endwin();
     return 0;
 }
