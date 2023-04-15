@@ -16,9 +16,10 @@ bool login(){
     box(login_win, 0, 0);
     mvwprintw(login_win, 2, 2, "Welcome to My Login System");
 
-    // Input fields
-    char username[32] = {0}; // Increased size to accommodate null terminator
-    char password[32] = {0}; // Increased size to accommodate null terminator
+    // Input fields for username and password
+    // secure zero initialize the buffers
+    char username[32] = {0};
+    char password[32] = {0};
     int current_field = 0; // 0 for username field, 1 for password field
 
     // Loop for user input
@@ -26,21 +27,27 @@ bool login(){
     bool running = true;
     while (running) {
         // Print username field
-        mvwprintw(login_win, 4, 2, "Username: ");
+        const char *username_label = "Username: ";
+        const char *password_label = "Password: ";
+        const char *login_button = "[Login]";
+        const char *username_field = "                               ";
+        const char *password_field = "*******************************";
+
+        mvwprintw(login_win, 4, 2, "%s", username_label);
         if (current_field == 0) {
             wattron(login_win, A_STANDOUT); // Highlight current field
-            mvwprintw(login_win, 4, 12, "                               ");
+            mvwprintw(login_win, 4, 12, "%s", username_field);
             mvwprintw(login_win, 4, 12, "%s", username);
             wattroff(login_win, A_STANDOUT);
         } else {
-            mvwprintw(login_win, 4, 12, "%s", username);
+            mvwprintw(login_win, 4, 12, "%s", username_field);
         }
 
         // Print password field
-        mvwprintw(login_win, 6, 2, "Password: ");
+        mvwprintw(login_win, 6, 2, "%s", password_label);
         if (current_field == 1) {
             wattron(login_win, A_STANDOUT); // Highlight current field
-            mvwprintw(login_win, 6, 12, "                               ");
+            mvwprintw(login_win, 6, 12, "%s", password_field);
             // Print '*' characters for password
             for (int i = 0; i < strlen(password); i++) {
                 mvwprintw(login_win, 6, 12 + i, "*");
@@ -48,11 +55,11 @@ bool login(){
             wattroff(login_win, A_STANDOUT);
         } else {
             // Print empty field for password
-            mvwprintw(login_win, 6, 12, "*******************************");
+            mvwprintw(login_win, 6, 12, "%s", password_field);
         }
 
         // Print login button
-        mvwprintw(login_win, 8, 2, "[Login]");
+        mvwprintw(login_win, 8, 2, "%s", login_button);
 
         // Refresh window
         wrefresh(login_win);
