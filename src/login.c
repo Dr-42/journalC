@@ -6,7 +6,7 @@
 bool login(){
     // Create window for login screen
     int height = 10;
-    int width = 40;
+    int width = 60;
     int starty = (LINES - height) / 2;
     int startx = (COLS - width) / 2;
     WINDOW *login_win = newwin(height, width, starty, startx);
@@ -17,8 +17,8 @@ bool login(){
     mvwprintw(login_win, 2, 2, "Welcome to My Login System");
 
     // Input fields
-    char username[31] = {0}; // Increased size to accommodate null terminator
-    char password[31] = {0}; // Increased size to accommodate null terminator
+    char username[32] = {0}; // Increased size to accommodate null terminator
+    char password[32] = {0}; // Increased size to accommodate null terminator
     int current_field = 0; // 0 for username field, 1 for password field
 
     // Loop for user input
@@ -29,7 +29,7 @@ bool login(){
         mvwprintw(login_win, 4, 2, "Username: ");
         if (current_field == 0) {
             wattron(login_win, A_STANDOUT); // Highlight current field
-            mvwprintw(login_win, 4, 12, "          ");
+            mvwprintw(login_win, 4, 12, "                               ");
             mvwprintw(login_win, 4, 12, "%s", username);
             wattroff(login_win, A_STANDOUT);
         } else {
@@ -40,7 +40,7 @@ bool login(){
         mvwprintw(login_win, 6, 2, "Password: ");
         if (current_field == 1) {
             wattron(login_win, A_STANDOUT); // Highlight current field
-            mvwprintw(login_win, 6, 12, "          ");
+            mvwprintw(login_win, 6, 12, "                               ");
             // Print '*' characters for password
             for (int i = 0; i < strlen(password); i++) {
                 mvwprintw(login_win, 6, 12 + i, "*");
@@ -48,7 +48,7 @@ bool login(){
             wattroff(login_win, A_STANDOUT);
         } else {
             // Print empty field for password
-            mvwprintw(login_win, 6, 12, "**********");
+            mvwprintw(login_win, 6, 12, "*******************************");
         }
 
         // Print login button
