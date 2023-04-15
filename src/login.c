@@ -1,4 +1,5 @@
 #include "login.h"
+#include "exit_journal.h"
 
 #include <string.h>
 #include <ncurses.h>
@@ -90,10 +91,14 @@ bool login(){
                 running = false;
                 break;
             default: // Append character to current field
-                if (current_field == 0 && strlen(username) < 20) {
-                    strncat(username, &ch, 1);
-                } else if (current_field == 1 && strlen(password) < 20) {
-                    strncat(password, &ch, 1);
+                if (current_field == 0 && strlen(username) < 31) {
+                    strncat(username, (const char*)&ch, 1);
+                } else if (current_field == 1 && strlen(password) < 31) {
+                    strncat(password, (const char*)&ch, 1);
+                } else if (current_field == 0 && strlen(username) > 31) {
+                    exit_journal(BUFFER_OVERFLOW);
+                } else if (current_field == 1 && strlen(password) > 31) {
+                    exit_journal(BUFFER_OVERFLOW);
                 }
                 break;
         }

@@ -4,9 +4,10 @@
 #include <ncurses.h>
 
 typedef enum {
-    INVALID_LOGIN
+    INVALID_LOGIN,
+    BUFFER_OVERFLOW,
 } Error;
 
-void exit_journal(int error);
+void exit_journal(Error error);
 
 #endif // __EXIT_JOURNAL_H__
