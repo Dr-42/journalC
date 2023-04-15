@@ -1,0 +1,11 @@
+[build]
+compiler = "gcc"
+
+[[targets]]
+name = "main"
+src = "./src/"
+include_dir = "./src/include/"
+type = "exe"
+cflags = "-g -Wall"
+libs = "-lncurses"
+deps = [""]
