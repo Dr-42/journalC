@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <ncurses.h>
 
-bool login();
+bool login(char* user);
 void new_user();
 
 #endif // __LOGIN_H__

@@ -11,7 +11,7 @@
 
 #define SHA256_BLOCK_SIZE 32
 
-bool login(){
+bool login(char *user){
     // Create window for login screen
     int starty = (LINES - LOGIN_SCREEN_HEIGHT) / 2;
     int startx = (COLS - LOGIN_SCREEN_WIDTH) / 2;
@@ -153,7 +153,9 @@ bool login(){
         // Compare username and hash
         // If match, set found to true
         if (strcmp(username, username_hash) == 0 && memcmp(hash, hash_bytes, SHA256_BLOCK_SIZE) == 0) {
+            strcpy(user, username);
             found = true;
+            running = false;
             break;
         }
     }

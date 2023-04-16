@@ -5,8 +5,9 @@
 
 int main() {
     init_curses();
-    if (login()){
-        edit();
+    char user[32] = {0};
+    if (login(user)){
+        edit(user);
     } else {
         exit_journal(INVALID_LOGIN, "Invalid username or password");
     }
