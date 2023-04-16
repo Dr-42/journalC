@@ -3,6 +3,8 @@
 #include <string.h>
 #include <time.h>
 
+#define MAX_ENTRY_SIZE 1024*1024
+
 void edit(const char *user){
     // Create window for edit screen
     const int starty = 0;
@@ -11,6 +13,7 @@ void edit(const char *user){
     refresh();
 
     bool running = true;
+    char entry[MAX_ENTRY_SIZE] = {0};
 
     while (running) {
 
@@ -66,8 +69,12 @@ void edit(const char *user){
                 // Open previous entries
                 break;
             default:
+                //Type in the curent frame
+                entry[strlen(entry)] = ch;
+                mvwprintw(edit_win, 2, 1, "%s", entry);
                 break;
         }
+        wrefresh(edit_win);
     }
 }
 
