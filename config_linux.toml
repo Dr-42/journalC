@@ -7,5 +7,5 @@ src = "./src/"
 include_dir = "./src/include/"
 type = "exe"
 cflags = "-g -Wall"
-libs = "-lncurses"
+libs = "-lncurses -lcrypto"
 deps = [""]

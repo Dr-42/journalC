@@ -8,7 +8,7 @@ int main() {
     if (login()){
         edit();
     } else {
-        exit_journal(INVALID_LOGIN);
+        exit_journal(INVALID_LOGIN, "Invalid username or password");
     }
     end_curses();
     return 0;
