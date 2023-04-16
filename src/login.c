@@ -7,7 +7,7 @@
 #include <openssl/sha.h>
 
 #define LOGIN_SCREEN_WIDTH 60
-#define LOGIN_SCREEN_HEIGHT 10
+#define LOGIN_SCREEN_HEIGHT 12
 
 #define SHA256_BLOCK_SIZE 32
 
@@ -71,9 +71,8 @@ bool login(){
         // Print login button
         mvwprintw(login_win, 8, login_button_x, "%s", login_button);
 
-        //Press Ctrl + Shift + U for new user
         //Prompt at the bottom of the screen
-        mvwprintw(login_win, 9, 2, "Press F3 for new user");
+        mvwprintw(login_win, 11, 2, "Press F3 for new user");
 
         // Refresh window
         wrefresh(login_win);
@@ -106,13 +105,7 @@ bool login(){
 
             case KEY_F(3): // New user
                 running = false;
-                if (new_user(login_win)){
-                    clear();
-                    refresh();
-                    exit_journal(CREATE_USER, "New user created. Please login.");
-                } else {
-                    continue;
-                }
+                new_user();
 
             default: // Append character to current field
                 if (current_field == 0 && strlen(username) < 31) {
@@ -178,7 +171,7 @@ bool login(){
     }
 }
 
-bool new_user(WINDOW *login_win) {
+void new_user() {
     // Create window for login screen
     // Close previous window
     int starty = (LINES - LOGIN_SCREEN_HEIGHT) / 2;
@@ -188,18 +181,18 @@ bool new_user(WINDOW *login_win) {
 
     // Print login screen
     box(new_user_win, 0, 0);
-    mvwprintw(login_win, 2, 2, "Create New User                            ");
+    mvwprintw(new_user_win, 2, 2, "Create New User                            ");
 
     // Input fields for username and password
     // secure zero initialize the buffers
     char username[32] = {0};
     char password[32] = {0};
+    char password_confirm[32] = {0};
     int current_field = 0; // 0 for username field, 1 for password field
 
     // Loop for user input
     int ch;
     bool running = true;
-    bool sw = false;
     while (running) {
         // Print username field
         const char *new_user_button = "[Create User]";
@@ -209,52 +202,65 @@ bool new_user(WINDOW *login_win) {
         //X Center the fields
         int username_field_x = (LOGIN_SCREEN_WIDTH - strlen(username_field)) / 2;
         int password_field_x = (LOGIN_SCREEN_WIDTH - strlen(password_field)) / 2;
+        int password_confirm_field_x = (LOGIN_SCREEN_WIDTH - strlen(password_field)) / 2;
         int login_button_x = (LOGIN_SCREEN_WIDTH - strlen(new_user_button)) / 2;
 
         if (current_field == 0) {
-            wattron(login_win, A_STANDOUT); // Highlight current field
-            mvwprintw(login_win, 4, username_field_x, "%s", username_field);
+            wattron(new_user_win, A_STANDOUT); // Highlight current field
+            mvwprintw(new_user_win, 4, username_field_x, "%s", username_field);
             // Print username at center of field
-            mvwprintw(login_win, 4 , username_field_x + (strlen(username_field) - strlen(username)) / 2, "%s", username);
-            wattroff(login_win, A_STANDOUT);
+            mvwprintw(new_user_win, 4 , username_field_x + (strlen(username_field) - strlen(username)) / 2, "%s", username);
+            wattroff(new_user_win, A_STANDOUT);
         } else {
-            wattron(login_win, A_DIM); // Dim other fields
-            mvwprintw(login_win, 4 , username_field_x + (strlen(username_field) - strlen(username)) / 2, "%s", username);
-            wattroff(login_win, A_DIM);
+            wattron(new_user_win, A_DIM); // Dim other fields
+            mvwprintw(new_user_win, 4 , username_field_x + (strlen(username_field) - strlen(username)) / 2, "%s", username);
+            wattroff(new_user_win, A_DIM);
         }
 
         // Print password field
         if (current_field == 1) {
-            wattron(login_win, A_STANDOUT); // Highlight current field
-            mvwprintw(login_win, 6, password_field_x, "%s", password_field);
+            wattron(new_user_win, A_STANDOUT); // Highlight current field
+            mvwprintw(new_user_win, 6, password_field_x, "%s", password_field);
             // Print '*' characters for password
             for (int i = 0; i < strlen(password); i++) {
-                mvwprintw(login_win, 6, password_field_x + i, "*");
+                mvwprintw(new_user_win, 6, password_field_x + i, "*");
             }
-            wattroff(login_win, A_STANDOUT);
+            wattroff(new_user_win, A_STANDOUT);
         } else {
             // Print empty field for password
-            mvwprintw(login_win, 6, password_field_x, "%s", password_field);
+            mvwprintw(new_user_win, 6, password_field_x, "%s", password_field);
+        }
+        // Print confirm password field
+        if (current_field == 2) {
+            wattron(new_user_win, A_STANDOUT); // Highlight current field
+            mvwprintw(new_user_win, 8, password_confirm_field_x, "%s", password_field);
+            // Print '*' characters for password
+            for (int i = 0; i < strlen(password_confirm); i++) {
+                mvwprintw(new_user_win, 8, password_confirm_field_x + i, "*");
+            }
+            wattroff(new_user_win, A_STANDOUT);
+        } else {
+            // Print empty field for password
+            mvwprintw(new_user_win, 8, password_confirm_field_x, "%s", password_field);
         }
 
         // Print login button
-        mvwprintw(login_win, 8, login_button_x, "%s", new_user_button);
+        mvwprintw(new_user_win, 10, login_button_x, "%s", new_user_button);
 
         // Refresh window
-        wrefresh(login_win);
-
+        wrefresh(new_user_win);
 
         // Get user input
         ch = getch();
         switch (ch) {
             case KEY_DOWN: // Move to next field
-                current_field = (current_field + 1) % 2;
+                current_field = (current_field + 1) % 3;
                 break;
             case KEY_UP: // Move to previous field
-                current_field = (current_field + 1) % 2;
+                current_field = (current_field + 1) % 3;
                 break;
             case '\t': // Move to next field on Tab key
-                current_field = (current_field + 1) % 2;
+                current_field = (current_field + 1) % 3;
                 break;
             case KEY_BACKSPACE:
             case KEY_DC:
@@ -275,18 +281,32 @@ bool new_user(WINDOW *login_win) {
                     strncat(username, (const char*)&ch, 1);
                 } else if (current_field == 1 && strlen(password) < 31) {
                     strncat(password, (const char*)&ch, 1);
+                } else if (current_field == 2 && strlen(password_confirm) < 31) {
+                    strncat(password_confirm, (const char*)&ch, 1);
                 } else if (current_field == 0 && strlen(username) > 31) {
                     exit_journal(BUFFER_OVERFLOW, "Username too long");
                 } else if (current_field == 1 && strlen(password) > 31) {
+                    exit_journal(BUFFER_OVERFLOW, "Password too long");
+                } else if (current_field == 2 && strlen(password_confirm) > 31) {
                     exit_journal(BUFFER_OVERFLOW, "Password too long");
                 }
                 break;
         }
     }
 
-    if (sw == true) {
-        return false;
+    if (strlen(username) == 0) {
+        exit_journal(EMPTY_FIELD, "Username cannot be empty");
     }
+
+    if (strlen(password) == 0) {
+        exit_journal(EMPTY_FIELD, "Password cannot be empty");
+    }
+
+    if (strcmp(password, password_confirm) != 0) {
+        exit_journal(PASSWORD_MISMATCH, "The passwords do not match");
+        printf("%s, %s", password, password_confirm);
+    }
+
     // Save new user to file with sha256 hash of password
     FILE *fp = fopen("users.hash", "a");
     if (fp == NULL) {
@@ -305,6 +325,5 @@ bool new_user(WINDOW *login_win) {
     fprintf(fp, "%s", "\n");
     // Close file
     fclose(fp);
-
-    return true;
+    exit_journal(CREATE_USER, "New user created");
 }

@@ -4,6 +4,6 @@
 #include <ncurses.h>
 
 bool login();
-bool new_user(WINDOW *login_win);
+void new_user();
 
 #endif // __LOGIN_H__

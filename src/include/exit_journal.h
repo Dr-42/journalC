@@ -9,6 +9,8 @@ typedef enum {
     FILE_ERROR,
     CREATE_USER,
     OPEN_FILE,
+    PASSWORD_MISMATCH,
+    EMPTY_FIELD,
 } Error;
 
 void exit_journal(Error error, char *message);
