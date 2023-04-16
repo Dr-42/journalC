@@ -72,15 +72,21 @@ void edit(const char *user){
             //Basic Keyboard controls
             case KEY_BACKSPACE:
                 //Delete the last character in the current frame
-                entry[strlen(entry) - 1] = '\0';
+                if (strlen(entry) > 0) {
+                    entry[strlen(entry) - 1] = '\0';
+                }
                 break;
             case KEY_ENTER:
                 //Type in the curent frame
-                entry[strlen(entry)] = '\n';
+                if (strlen(entry) < MAX_ENTRY_SIZE) {
+                    entry[strlen(entry)] = '\n';
+                }
                 break;
             default:
                 //Type in the curent frame
-                entry[strlen(entry)] = ch;
+                if (strlen(entry) < MAX_ENTRY_SIZE) {
+                    entry[strlen(entry)] = ch;
+                }
                 break;
         }
         //clear the screen
