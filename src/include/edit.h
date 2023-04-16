@@ -4,5 +4,6 @@
 
 void edit(const char* user);
 void help(bool show_help);
+void print_entry(WINDOW* edit_win, char* entry);
 
 #endif // __EDIT_H__

@@ -68,13 +68,42 @@ void edit(const char *user){
             case KEY_F(5):
                 // Open previous entries
                 break;
+
+            //Basic Keyboard controls
+            case KEY_BACKSPACE:
+                //Delete the last character in the current frame
+                entry[strlen(entry) - 1] = '\0';
+                break;
+            case KEY_ENTER:
+                //Type in the curent frame
+                entry[strlen(entry)] = '\n';
+                break;
             default:
                 //Type in the curent frame
                 entry[strlen(entry)] = ch;
-                mvwprintw(edit_win, 2, 1, "%s", entry);
                 break;
         }
+        //clear the screen
+        werase(edit_win);
+        print_entry(edit_win, entry);
         wrefresh(edit_win);
+    }
+}
+
+// Print entry to the screen
+void print_entry(WINDOW *edit_win, char *entry){
+    int x = 1;
+    int y = 1;
+    int i = 0;
+    while (entry[i] != '\0') {
+        if (entry[i] == '\n') {
+            y++;
+            x = 1;
+        } else {
+            mvwprintw(edit_win, y, x, "%c", entry[i]);
+            x++;
+        }
+        i++;
     }
 }
 
