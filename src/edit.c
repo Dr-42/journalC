@@ -70,6 +70,26 @@ void edit(const char *user){
                 // Open previous entries
                 break;
 
+            // Arrow key controls
+            case KEY_UP:
+                // Move cursor up
+                break;
+            case KEY_DOWN:
+                // Move cursor down
+                break;
+            case KEY_LEFT:
+                // Move cursor left
+                if (cursor > 0) {
+                    cursor--;
+                }
+                break;
+            case KEY_RIGHT:
+                // Move cursor right
+                if (cursor < strlen(entry)) {
+                    cursor++;
+                }
+                break;
+
             //Basic Keyboard controls
             case KEY_BACKSPACE:
                 //Delete the last character in the current frame
@@ -86,9 +106,12 @@ void edit(const char *user){
                 }
                 break;
             default:
-                //Type in the curent frame
+                //Type in the curent frame at the cursor
                 if (strlen(entry) < MAX_ENTRY_SIZE) {
-                    entry[strlen(entry)] = ch;
+                    for (int i = strlen(entry); i > cursor; i--) {
+                        entry[i] = entry[i - 1];
+                    }
+                    entry[cursor] = ch;
                     cursor++;
                 }
                 break;
@@ -127,7 +150,13 @@ void print_entry(WINDOW *edit_win, char *entry, unsigned int cursor){
         }
     }
     wattron(edit_win, A_STANDOUT);
-    mvwprintw(edit_win, y, x, "%c", ' ');
+    if (entry[cursor] == '\n') {
+        mvwprintw(edit_win, y, x, "%c", ' ');
+    } else if (entry[cursor] == '\0') {
+        mvwprintw(edit_win, y, x, "%c", ' ');
+    } else {
+        mvwprintw(edit_win, y, x, "%c", entry[cursor]);
+    }
     wattroff(edit_win, A_STANDOUT);
 }
 
