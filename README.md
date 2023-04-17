@@ -6,11 +6,11 @@ A simple encrypted jounarling book
 
 ### TODOs
 
-[x] Login system
-[x] Typing in window
-[x] Basic cursor
-[ ] Saving buffer
-[ ] Encrypt saved buffer
-[ ] Decrypt buffer with current password
-[ ] See old entries
-[ ] General total encryption
+- [x] Login system
+- [x] Typing in window
+- [x] Basic cursor
+- [ ] Saving buffer
+- [ ] Encrypt saved buffer
+- [ ] Decrypt buffer with current password
+- [ ] See old entries
+- [ ] General total encryption
