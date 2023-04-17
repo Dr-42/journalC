@@ -1,5 +1,6 @@
 #include "edit.h"
 #include <curses.h>
+#include <stdbool.h>
 #include <string.h>
 #include <time.h>
 
@@ -73,9 +74,70 @@ void edit(const char *user){
             // Arrow key controls
             case KEY_UP:
                 // Move cursor up
+                {
+                    bool is_first_line = true;
+                    int previous_line_end = 0;
+                    for (int i = cursor; i >= 0; i--) {
+                        if (entry[i] == '\n') {
+                            is_first_line = false;
+                            previous_line_end = i - 1;
+                            break;
+                        }
+                    }
+                    if (!is_first_line) {
+                        int previous_line_length = 0;
+                        for (int i = previous_line_end; i >= 0; i--) {
+                            if (entry[i] == '\n') {
+                                break;
+                            } else {
+                                previous_line_length++;
+                            }
+                        }
+                        cursor -= previous_line_length + 1;
+                        //Check if cursor reached the previous line, else place cursor at end
+                        if (cursor > previous_line_end) {
+                            cursor = previous_line_end + 1;
+                        }
+                    }
+                }
                 break;
             case KEY_DOWN:
                 // Move cursor down
+                {
+                    bool is_last_line = true;
+                    int current_line_end = 0;
+                    for (int i = cursor; i < strlen(entry); i++){
+                        if (entry[i] == '\n'){
+                            is_last_line = false;
+                            current_line_end = i - 1;
+                            break;
+                        }
+                    }
+                    if (!is_last_line){
+                        int current_line_length = 0;
+                        int next_line_end = 0;
+                        for (int i = current_line_end; i >= 0; i--){
+                            current_line_length++;
+                            if (entry[i] == '\n'){
+                                break;
+                            }
+                        }
+                        int numnewline = 0;
+                        for (int i = cursor; i <= strlen(entry); i++){
+                            if (entry[i] == '\n' || entry[i] == '\0'){
+                                numnewline++;
+                                if (numnewline == 2){
+                                    next_line_end = i;
+                                    break;
+                                }
+                            }
+                        }
+                        cursor += current_line_length;
+                        if (cursor > next_line_end){
+                            cursor = next_line_end;
+                        }
+                    }
+                }
                 break;
             case KEY_LEFT:
                 // Move cursor left
