@@ -23,6 +23,7 @@ void edit(const char *user){
         mvwprintw(edit_win, 0, title_x, "%s", title);
 
         // Main screen is the text input area
+        // Pressing F1 will open the help menu
         // Pressing F2 will save the text to a file
         // Pressing F3 will exit the program
         // Pressing F4 will clear the text input area without saving
@@ -39,14 +40,18 @@ void edit(const char *user){
         time_t t = time(NULL);
         struct tm tm = *localtime(&t);
         mvwprintw(edit_win, LINES - 1, COLS - 20, "%d-%d-%d %d:%d:%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-
-
         wrefresh(edit_win);
 
         // Get user input
         int ch = getch();
 
+        bool show_help = false;
         switch (ch) {
+            case KEY_F(1):
+                show_help = !show_help;
+                help(show_help);
+                // Open help menu
+                break;
             case KEY_F(2):
                 // Save entry
                 break;
@@ -62,6 +67,39 @@ void edit(const char *user){
                 break;
             default:
                 break;
+        }
+    }
+}
+
+//Display help window when show_help is true
+void help(bool show_help){
+    if (show_help) {
+        bool running = true;
+        while(running){
+            // Create window for help menu
+            const int starty = 2;
+            const int startx = (COLS - 40) / 2;
+            WINDOW *help_menu = newwin(9, 40, starty, startx);
+            box(help_menu, 0, 0);
+
+            // Print help menu title
+            const char *title = "Help";
+            int title_x = (40 - strlen(title)) / 2;
+            mvwprintw(help_menu, 0, title_x, "%s", title);
+
+            // Print help information for function keys
+            mvwprintw(help_menu, 2, 2, "F1: Open Help Menu");
+            mvwprintw(help_menu, 3, 2, "F2: Save Entry");
+            mvwprintw(help_menu, 4, 2, "F3: Exit Program");
+            mvwprintw(help_menu, 5, 2, "F4: Clear Text Input Area");
+            mvwprintw(help_menu, 6, 2, "F5: Open Previous Entries");
+
+            // Refresh and show help menu
+            wrefresh(help_menu);
+            if (getch() == KEY_F(1)) {
+                delwin(help_menu);
+                running = false;
+            }
         }
     }
 }
