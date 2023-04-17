@@ -14,6 +14,7 @@ void edit(const char *user){
 
     bool running = true;
     char entry[MAX_ENTRY_SIZE] = {0};
+    unsigned int cursor = 0;
 
     while (running) {
 
@@ -74,30 +75,33 @@ void edit(const char *user){
                 //Delete the last character in the current frame
                 if (strlen(entry) > 0) {
                     entry[strlen(entry) - 1] = '\0';
+                    cursor--;
                 }
                 break;
             case KEY_ENTER:
                 //Type in the curent frame
                 if (strlen(entry) < MAX_ENTRY_SIZE) {
                     entry[strlen(entry)] = '\n';
+                    cursor++;
                 }
                 break;
             default:
                 //Type in the curent frame
                 if (strlen(entry) < MAX_ENTRY_SIZE) {
                     entry[strlen(entry)] = ch;
+                    cursor++;
                 }
                 break;
         }
         //clear the screen
         werase(edit_win);
-        print_entry(edit_win, entry);
+        print_entry(edit_win, entry, cursor);
         wrefresh(edit_win);
     }
 }
 
 // Print entry to the screen
-void print_entry(WINDOW *edit_win, char *entry){
+void print_entry(WINDOW *edit_win, char *entry, unsigned int cursor){
     int x = 1;
     int y = 1;
     int i = 0;
@@ -111,6 +115,20 @@ void print_entry(WINDOW *edit_win, char *entry){
         }
         i++;
     }
+    x = 1;
+    y = 1;
+    // Print cursor
+    for (int i = 0; i < cursor; i++) {
+        if (entry[i] == '\n') {
+            y++;
+            x = 1;
+        } else {
+            x++;
+        }
+    }
+    wattron(edit_win, A_STANDOUT);
+    mvwprintw(edit_win, y, x, "%c", ' ');
+    wattroff(edit_win, A_STANDOUT);
 }
 
 //Display help window when show_help is true
