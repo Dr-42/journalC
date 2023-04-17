@@ -93,7 +93,10 @@ void edit(const char *user){
             //Basic Keyboard controls
             case KEY_BACKSPACE:
                 //Delete the last character in the current frame
-                if (strlen(entry) > 0) {
+                if (cursor > 0) {
+                    for (int i = cursor; i < strlen(entry); i++) {
+                        entry[i - 1] = entry[i];
+                    }
                     entry[strlen(entry) - 1] = '\0';
                     cursor--;
                 }
