@@ -53,9 +53,9 @@ void edit(const char *user){
         bool show_help = false;
         switch (ch) {
             case KEY_F(1):
+                // Open help menu
                 show_help = !show_help;
                 help(show_help);
-                // Open help menu
                 break;
             case KEY_F(2):
                 // Save entry
@@ -66,6 +66,12 @@ void edit(const char *user){
                 break;
             case KEY_F(4):
                 // Clear text input area
+                {
+                    for (int i = 0; i < MAX_ENTRY_SIZE; i++){
+                        entry[i] = '\0';
+                    }
+                    cursor = 0;
+                }
                 break;
             case KEY_F(5):
                 // Open previous entries
