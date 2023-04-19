@@ -1,6 +1,8 @@
 #include "edit.h"
+#include "exit_journal.h"
 #include <curses.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
 
@@ -44,7 +46,9 @@ void edit(const char *user){
         // Print Time and Date
         time_t t = time(NULL);
         struct tm tm = *localtime(&t);
-        mvwprintw(edit_win, LINES - 1, COLS - 20, "%d-%d-%d %d:%d:%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+        char date_time[50] = {0};
+        sprintf(date_time, "%d-%d-%d %d:%d:%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+        mvwprintw(edit_win, LINES - 1, COLS - 20, "%s", date_time);
         wrefresh(edit_win);
 
         // Get user input
@@ -59,6 +63,20 @@ void edit(const char *user){
                 break;
             case KEY_F(2):
                 // Save entry
+                {
+                    char filename[50] = {0};
+                    sprintf(filename, "%s_%s.ent", user, date_time);
+                    FILE *fp = fopen(filename, "w");
+                    if (fp == NULL) {
+                        exit_journal(FILE_ERROR, "Could not open users.hash file");
+                    }
+                    fprintf(fp, "%s", entry);
+                    fclose(fp);
+                    for (int i = 0; i < MAX_ENTRY_SIZE; i++){
+                        entry[i] = '\0';
+                    }
+                    cursor = 0;
+                }
                 break;
             case KEY_F(3):
                 // Exit program
