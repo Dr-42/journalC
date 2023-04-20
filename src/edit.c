@@ -68,7 +68,7 @@ void edit(const char *user){
                     sprintf(filename, "%s_%s.ent", user, date_time);
                     FILE *fp = fopen(filename, "w");
                     if (fp == NULL) {
-                        exit_journal(FILE_ERROR, "Could not open users.hash file");
+                        exit_journal(FILE_ERROR, "Could not open an entry file");
                     }
                     fprintf(fp, "%s", entry);
                     fclose(fp);
