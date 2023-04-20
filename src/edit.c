@@ -48,7 +48,7 @@ void edit(const char *user){
         time_t t = time(NULL);
         struct tm tm = *localtime(&t);
         char date_time[50] = {0};
-        sprintf(date_time, "%d-%d-%d %d:%d:%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+        sprintf(date_time, "%d-%d-%d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
         mvwprintw(edit_win, LINES - 1, COLS - 20, "%s", date_time);
         wrefresh(edit_win);
 
@@ -108,12 +108,17 @@ void edit(const char *user){
                     while ((dir = readdir(d)) != NULL) {
                         if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") == 0) continue;
                         if (dir->d_type != DT_DIR) {
+                            unsigned int i = 0;
+                            for (i = 0; i < strlen(dir->d_name); i++){
+                                filename[i] = dir->d_name[i];
+                            }
+                            filename[i] = '\0';
                             //Check if file is an entry
-                            if (strstr(dir->d_name, ".ent") != NULL){
+                            if (strstr(filename, ".ent") != NULL){
                                 //Check if file is for the current user
-                                if (strstr(dir->d_name, user) != NULL){
+                                if (strstr(filename, user) != NULL){
                                     //Open file
-                                    FILE *fp = fopen(dir->d_name, "r");
+                                    FILE *fp = fopen(filename, "r");
                                     if (fp == NULL){
                                         exit_journal(FILE_ERROR, "Could not open entry file");
                                     }
@@ -139,11 +144,13 @@ void edit(const char *user){
                                     }
 
                                     // Print entry
-                                    strcpy(filename, dir->d_name);
                                     mvwprintw(edit_win, 0, COLS + 2 - strlen(filename), "%s", filename);
                                     print_entry(edit_win, entry, cursor);
                                     wrefresh(edit_win);
                                     //Wait for user input
+                                    for (int i = 0; i < filename[i] != '\0'; i++){
+                                        filename[i] = '\0';
+                                    }
                                     getch();
                                 }
                             }
