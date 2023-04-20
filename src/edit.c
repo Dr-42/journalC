@@ -194,20 +194,76 @@ void edit(const char *user, const char *password){
                                     //Add entry to list
                                     strcpy(entries[entry_count], filename);
                                     entry_count++;
-
-                                    //Print entry
-                                    display_entry(filename,user, password, edit_win, entry, cursor);
                                     for (int i = 0; i < filename[i] != '\0'; i++){
                                         filename[i] = '\0';
                                     }
-                                    //Wait for user input
-                                    getch();
                                 }
                             }
                         }
                     }
 
                     closedir(d);
+                    
+                    bool show_selection_popup = true;
+                    int selected_entry = 0;
+                    int selected_entry_offset = 0;
+
+                    while(show_selection_popup){
+                        //Create a panel on the left side usiing half vertical space
+                        WINDOW *popup_win = newwin(LINES - 2, COLS / 2, 1, 0);
+                        box(popup_win, 0, 0);
+                        wrefresh(popup_win);
+
+                        //Print entry file names
+                        //If there are more than LINES - 4 entries, only print the entries that are in the current view
+                        int num_entries_to_print = LINES - 4;
+                        for(int i = selected_entry_offset; i < num_entries_to_print; i++){
+                            if (i == selected_entry){
+                                wattron(popup_win, A_REVERSE);
+                                mvwprintw(popup_win, i - selected_entry_offset + 1, 1, "%s", entries[i]);
+                                wattroff(popup_win, A_REVERSE);
+                            } else {
+                                mvwprintw(popup_win, i - selected_entry_offset + 1, 1, "%s", entries[i]);
+                            }
+                        }
+
+                        wrefresh(popup_win);
+
+                        //Get user input
+                        //Arrow keys move the cursor up and down
+                        //Right arrow opens the selected entry
+                        //Left arrow exits the popup
+                        //F5 exits the popup
+                        int ch = getch();
+
+                        switch (ch) {
+                            case KEY_UP:
+                                if (selected_entry > 0){
+                                    selected_entry--;
+                                    if (selected_entry < selected_entry_offset){
+                                        selected_entry_offset--;
+                                    }
+                                }
+                                break;
+                            case KEY_DOWN:
+                                if (selected_entry < entry_count - 1){
+                                    selected_entry++;
+                                    if (selected_entry > selected_entry_offset + num_entries_to_print - 1){
+                                        selected_entry_offset++;
+                                    }
+                                }
+                                break;
+                            case KEY_LEFT:
+                                show_selection_popup = false;
+                                break;
+                            case KEY_RIGHT:
+                                show_selection_popup = false;
+                                display_entry(entries[selected_entry], user, password, edit_win, entry, cursor);
+                                getch();
+                                break;                        
+                        }
+                    }
+
                     entry_count = 0;
                     for(int i = 0; i < MAX_NUM_ENTRIES; i++){
                         for(int j = 0; j < MAX_ENTRY_NAME_SIZE; j++){
