@@ -7,6 +7,7 @@
 #include <string.h>
 #include <time.h>
 #include <dirent.h>
+#include <pthread.h>
 
 #define AES_IMPLEMENTATION
 #include "aes.h"
@@ -15,8 +16,20 @@
 #define MAX_ENTRY_NAME_SIZE 54
 #define MAX_NUM_ENTRIES 1000
 
+// Define a struct to pass data to the thread function
+typedef struct {
+    char *entry;
+    unsigned char *encrypted;
+    uint8_t *pass;
+    int start;
+    int end;
+} ThreadData;
+
+
 //Private functions
 void display_entry(char* filename, const char *user, const char *password, WINDOW *display_win, char *entry, unsigned int cursor);
+void *encrypt_thread(void *arg);
+void encrypt_multithreaded(char *entry, unsigned char *encrypted, uint8_t *pass, int num_threads);
 void display_previous_entries(const char *user, const char *password, WINDOW *edit_win, char *entry, unsigned int cursor);
 void save_entry(const char *user, const char *password, char *entry, unsigned int* cursor, char *date_time);
 void print_entry(WINDOW* edit_win, char* entry, unsigned int cursor);
@@ -367,7 +380,8 @@ void display_previous_entries(const char *user, const char *password, WINDOW *ed
                 }
                 break;
             case KEY_DOWN:
-                if (selected_entry + selected_entry_offset < entry_count - 5){
+                //The 5 may be related to num entries to print
+                if (selected_entry + selected_entry_offset < entry_count - 1){
                     selected_entry++;
                     if (selected_entry > selected_entry_offset + num_entries_to_print - 1){
                         selected_entry_offset++;
@@ -429,6 +443,43 @@ void display_previous_entries(const char *user, const char *password, WINDOW *ed
     wrefresh(edit_win);
 }
 
+
+void *encrypt_thread(void *arg) {
+    ThreadData *data = (ThreadData *)arg;
+
+    for (int i = data->start; i < data->end; i++) {
+        uint8_t *w = aes_init(sizeof(data->pass));
+
+        unsigned char *in = (unsigned char *)data->entry + (i * 16);
+        aes_key_expansion(data->pass, w);
+        unsigned char *out = data->encrypted + (i * 16);
+        aes_cipher(in, out, w);
+    }
+
+    return NULL;
+}
+
+void encrypt_multithreaded(char *entry, unsigned char *encrypted, uint8_t *pass, int num_threads) {
+    int length = (strlen(entry) / 16) + 1;
+    pthread_t threads[num_threads];
+    ThreadData thread_data[num_threads];
+
+    for (int i = 0; i < num_threads; i++) {
+        thread_data[i].entry = entry;
+        thread_data[i].encrypted = encrypted;
+        thread_data[i].pass = pass;
+        thread_data[i].start = i * (length / num_threads);
+        thread_data[i].end = (i == num_threads - 1) ? length : (i + 1) * (length / num_threads);
+
+        pthread_create(&threads[i], NULL, encrypt_thread, &thread_data[i]);
+    }
+
+    for (int i = 0; i < num_threads; i++) {
+        pthread_join(threads[i], NULL);
+    }
+}
+
+
 void save_entry(const char *user, const char *password, char *entry, unsigned int* cursor, char *date_time){
     char filename[50] = {0};
     sprintf(filename, "%s_%s.ent", user, date_time);
@@ -443,16 +494,7 @@ void save_entry(const char *user, const char *password, char *entry, unsigned in
     }
 
     unsigned char encrypted[MAX_ENTRY_SIZE] = {0};
-    for (int i = 0; i < ((strlen(entry) / 16) + 1); i++){
-        uint8_t *w; // AES expanded key
-        w = aes_init(sizeof(pass));
-
-        unsigned char *in = (unsigned char *)entry + (i * 16);
-        aes_key_expansion(pass, w);
-        unsigned char *out = encrypted + (i * 16);
-        aes_cipher(in, out, w);
-    }
-
+    encrypt_multithreaded(entry, encrypted, pass, 4);
     fwrite(encrypted, sizeof(encrypted), 1, fp);
     fclose(fp);
     for (int i = 0; i < MAX_ENTRY_SIZE; i++){

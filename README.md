@@ -14,3 +14,4 @@ A simple encrypted jounarling book
 - [x] Decrypt buffer with current password
 - [x] See old entries
 - [x] General total encryption
+- [x] Multithreaded encryption
