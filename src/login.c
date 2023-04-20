@@ -12,12 +12,8 @@
 
 #define SHA256_BLOCK_SIZE 32
 
-void char_buffer_fill(char *buffer, int size, char c) {
-    for (int i = 0; i < size - 1; i++) {
-        buffer[i] = c;
-    }
-    buffer[size - 1] = '\0';
-}
+void new_user();
+void char_buffer_fill(char *buffer, int size, char c);
 
 bool login(char *user, char *pass){
     // Create window for login screen
@@ -345,3 +341,11 @@ void new_user() {
     fclose(fp);
     exit_journal(CREATE_USER, "New user created");
 }
+
+void char_buffer_fill(char *buffer, int size, char c) {
+    for (int i = 0; i < size - 1; i++) {
+        buffer[i] = c;
+    }
+    buffer[size - 1] = '\0';
+}
+
