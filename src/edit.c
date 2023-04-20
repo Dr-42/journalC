@@ -367,7 +367,7 @@ void display_previous_entries(const char *user, const char *password, WINDOW *ed
                 }
                 break;
             case KEY_DOWN:
-                if (selected_entry < entry_count - 1){
+                if (selected_entry + selected_entry_offset < entry_count - 5){
                     selected_entry++;
                     if (selected_entry > selected_entry_offset + num_entries_to_print - 1){
                         selected_entry_offset++;
