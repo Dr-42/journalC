@@ -11,7 +11,56 @@
 #define AES_IMPLEMENTATION
 #include "aes.h"
 
-#define MAX_ENTRY_SIZE 1024*1024
+#define MAX_ENTRY_SIZE 1024
+#define MAX_ENTRY_NAME_SIZE 54
+#define MAX_NUM_ENTRIES 1000
+
+void display_entry(char* filename, const char *user, const char *password, WINDOW *edit_win, char *entry, unsigned int cursor){
+    //Open file
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL){
+        exit_journal(FILE_ERROR, "Could not open entry file");
+    }
+    //Read file
+    unsigned char file_entry[MAX_ENTRY_SIZE] = {0};
+    fread(file_entry, sizeof(char), MAX_ENTRY_SIZE, fp);
+
+    uint8_t pass[16] = {0};
+    for (int i = 0; i < strlen(password); i++){
+        pass[i] = password[i];
+    }
+    for (int i = 0; i < ((sizeof(file_entry) / 16) + 1); i++){
+        uint8_t *w; // AES expanded key
+        w = aes_init(sizeof(pass));
+
+        unsigned char *in = (unsigned char *)file_entry + (i * 16);
+        aes_key_expansion(pass, w);
+        unsigned char *out = file_entry + (i * 16);
+        aes_inv_cipher(in, out, w);
+    }
+    char* decrypted = (char*)file_entry;
+    fclose(fp);
+    //Print file
+    //Clear entry from screen
+    for (int i = 0; i < MAX_ENTRY_SIZE; i++){
+        entry[i] = '\0';
+    }
+
+    // Copy file_entry to entry
+    for (int i = 0; i < strlen(decrypted); i++){
+        entry[i] = file_entry[i];
+    }
+    // Clear output area
+    int num_lines = LINES - 2;
+    for (int i = 0; i < num_lines; i++){
+        mvwprintw(edit_win, i + 1, 1, "                                                                                                    ");
+    }
+
+    // Print entry
+    mvwprintw(edit_win, 0, COLS + 2 - strlen(filename), "%s", filename);
+    print_entry(edit_win, entry, cursor);
+    wrefresh(edit_win);
+}
 
 void edit(const char *user, const char *password){
     // Create window for edit screen
@@ -52,7 +101,7 @@ void edit(const char *user, const char *password){
         time_t t = time(NULL);
         struct tm tm = *localtime(&t);
         char date_time[50] = {0};
-        sprintf(date_time, "%d-%d-%d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+        sprintf(date_time, "%04d-%02d-%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
         mvwprintw(edit_win, LINES - 1, COLS - 20, "%s", date_time);
         wrefresh(edit_win);
 
@@ -126,6 +175,10 @@ void edit(const char *user, const char *password){
                     if (!(dir = readdir(d))){
                         exit_journal(FILE_ERROR, "Could not read directory");
                     }
+                    
+                    char entries[MAX_NUM_ENTRIES][MAX_ENTRY_NAME_SIZE] = {0};
+                    int entry_count = 0;
+
                     while ((dir = readdir(d)) != NULL) {
                         if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") == 0) continue;
                         if (dir->d_type != DT_DIR) {
@@ -138,60 +191,29 @@ void edit(const char *user, const char *password){
                             if (strstr(filename, ".ent") != NULL){
                                 //Check if file is for the current user
                                 if (strstr(filename, user) != NULL){
-                                    //Open file
-                                    FILE *fp = fopen(filename, "r");
-                                    if (fp == NULL){
-                                        exit_journal(FILE_ERROR, "Could not open entry file");
-                                    }
-                                    //Read file
-                                    unsigned char file_entry[MAX_ENTRY_SIZE] = {0};
-                                    fread(file_entry, sizeof(char), MAX_ENTRY_SIZE, fp);
+                                    //Add entry to list
+                                    strcpy(entries[entry_count], filename);
+                                    entry_count++;
 
-                                    uint8_t pass[16] = {0};
-                                    for (int i = 0; i < strlen(password); i++){
-                                        pass[i] = password[i];
-                                    }
-                                    for (int i = 0; i < ((sizeof(file_entry) / 16) + 1); i++){
-                                        uint8_t *w; // AES expanded key
-                                        w = aes_init(sizeof(pass));
-
-                                        unsigned char *in = (unsigned char *)file_entry + (i * 16);
-                                        aes_key_expansion(pass, w);
-                                        unsigned char *out = file_entry + (i * 16);
-                                        aes_inv_cipher(in, out, w);
-                                    }
-                                    char* decrypted = (char*)file_entry;
-                                    fclose(fp);
-                                    //Print file
-                                    //Clear entry from screen
-                                    for (int i = 0; i < MAX_ENTRY_SIZE; i++){
-                                        entry[i] = '\0';
-                                    }
-
-                                    // Copy file_entry to entry
-                                    for (int i = 0; i < strlen(decrypted); i++){
-                                        entry[i] = file_entry[i];
-                                    }
-                                    // Clear output area
-                                    int num_lines = LINES - 2;
-                                    for (int i = 0; i < num_lines; i++){
-                                        mvwprintw(edit_win, i + 1, 1, "                                                                                                    ");
-                                    }
-
-                                    // Print entry
-                                    mvwprintw(edit_win, 0, COLS + 2 - strlen(filename), "%s", filename);
-                                    print_entry(edit_win, entry, cursor);
-                                    wrefresh(edit_win);
-                                    //Wait for user input
+                                    //Print entry
+                                    display_entry(filename,user, password, edit_win, entry, cursor);
                                     for (int i = 0; i < filename[i] != '\0'; i++){
                                         filename[i] = '\0';
                                     }
+                                    //Wait for user input
                                     getch();
                                 }
                             }
                         }
                     }
 
+                    closedir(d);
+                    entry_count = 0;
+                    for(int i = 0; i < MAX_NUM_ENTRIES; i++){
+                        for(int j = 0; j < MAX_ENTRY_NAME_SIZE; j++){
+                            entries[i][j] = '\0';
+                        }
+                    }
                     // Clear output area
                     int num_lines = LINES - 2;
                     for (int i = 0; i < num_lines; i++){

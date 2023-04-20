@@ -2,6 +2,7 @@
 #include "exit_journal.h"
 
 #include <curses.h>
+#include <stdio.h>
 #include <string.h>
 #include <ncurses.h>
 #include <openssl/sha.h>
@@ -10,6 +11,13 @@
 #define LOGIN_SCREEN_HEIGHT 12
 
 #define SHA256_BLOCK_SIZE 32
+
+void char_buffer_fill(char *buffer, int size, char c) {
+    for (int i = 0; i < size - 1; i++) {
+        buffer[i] = c;
+    }
+    buffer[size - 1] = '\0';
+}
 
 bool login(char *user, char *pass){
     // Create window for login screen
@@ -24,8 +32,8 @@ bool login(char *user, char *pass){
 
     // Input fields for username and password
     // secure zero initialize the buffers
-    char username[16] = {0};
-    char password[16] = {0};
+    char username[SHA256_BLOCK_SIZE] = {0};
+    char password[SHA256_BLOCK_SIZE] = {0};
     int current_field = 0; // 0 for username field, 1 for password field
 
     // Loop for user input
@@ -34,8 +42,12 @@ bool login(char *user, char *pass){
     while (running) {
         // Print username field
         const char *login_button = "[Login]";
-        const char *username_field = "                ";
-        const char *password_field = "****************";
+        // Username and password fields are 31 characters long
+        char username_field[SHA256_BLOCK_SIZE];
+        char password_field[SHA256_BLOCK_SIZE];
+
+        char_buffer_fill(username_field, SHA256_BLOCK_SIZE, ' ');
+        char_buffer_fill(password_field, SHA256_BLOCK_SIZE, '*');
 
         //X Center the fields
         int username_field_x = (LOGIN_SCREEN_WIDTH - strlen(username_field)) / 2;
@@ -199,8 +211,11 @@ void new_user() {
     while (running) {
         // Print username field
         const char *new_user_button = "[Create User]";
-        const char *username_field = "                               ";
-        const char *password_field = "*******************************";
+        char username_field[SHA256_BLOCK_SIZE];
+        char password_field[SHA256_BLOCK_SIZE];
+
+        char_buffer_fill(username_field, SHA256_BLOCK_SIZE, ' ');
+        char_buffer_fill(password_field, SHA256_BLOCK_SIZE, '*');
 
         //X Center the fields
         int username_field_x = (LOGIN_SCREEN_WIDTH - strlen(username_field)) / 2;
