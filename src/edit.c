@@ -15,7 +15,7 @@
 #define MAX_ENTRY_NAME_SIZE 54
 #define MAX_NUM_ENTRIES 1000
 
-void display_entry(char* filename, const char *user, const char *password, WINDOW *edit_win, char *entry, unsigned int cursor){
+void display_entry(char* filename, const char *user, const char *password, WINDOW *display_win, char *entry, unsigned int cursor){
     //Open file
     FILE *fp = fopen(filename, "r");
     if (fp == NULL){
@@ -53,13 +53,13 @@ void display_entry(char* filename, const char *user, const char *password, WINDO
     // Clear output area
     int num_lines = LINES - 2;
     for (int i = 0; i < num_lines; i++){
-        mvwprintw(edit_win, i + 1, 1, "                                                                                                    ");
+        mvwprintw(display_win, i + 1, 1, "                                                                                                    ");
     }
 
     // Print entry
-    mvwprintw(edit_win, 0, COLS + 2 - strlen(filename), "%s", filename);
-    print_entry(edit_win, entry, cursor);
-    wrefresh(edit_win);
+    mvwprintw(display_win, 0, COLS + 2 - strlen(filename), "%s", filename);
+    print_entry(display_win, entry, strlen(entry));
+    wrefresh(display_win);
 }
 
 void edit(const char *user, const char *password){
@@ -210,7 +210,7 @@ void edit(const char *user, const char *password){
 
                     while(show_selection_popup){
                         //Create a panel on the left side usiing half vertical space
-                        WINDOW *popup_win = newwin(LINES - 2, COLS / 2, 1, 0);
+                        WINDOW *popup_win = newwin(LINES - 2, 3 * COLS / 4, 1, 0);
                         box(popup_win, 0, 0);
                         wrefresh(popup_win);
 
@@ -257,9 +257,33 @@ void edit(const char *user, const char *password){
                                 show_selection_popup = false;
                                 break;
                             case KEY_RIGHT:
-                                show_selection_popup = false;
-                                display_entry(entries[selected_entry], user, password, edit_win, entry, cursor);
-                                getch();
+                                {
+                                    bool show_entry_popup = true;
+                                    while(show_entry_popup){
+                                        WINDOW *popup_win = newwin(LINES - 2, 3 * COLS / 4, 1, 0);
+
+                                        //Print entry
+                                        display_entry(entries[selected_entry], user, password, popup_win, entry, cursor);
+
+                                        wrefresh(popup_win);
+                                        box(popup_win, 0, 0);
+                                        wrefresh(popup_win);
+
+                                        mvwprintw(popup_win, LINES - 2, 1, "Press left arrow to exit");
+                                        wrefresh(popup_win);
+
+                                        //Print entry file name on top of popup
+                                        mvwprintw(popup_win, 0, 1, "%s", entries[selected_entry]);
+                                        wrefresh(popup_win);
+
+                                        int ch = getch();
+                                        switch (ch) {
+                                            case KEY_LEFT:
+                                                show_entry_popup = false;
+                                                break;
+                                        }
+                                    }
+                                }
                                 break;                        
                         }
                     }
