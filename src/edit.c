@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <dirent.h>
 
 #define MAX_ENTRY_SIZE 1024*1024
 
@@ -93,6 +94,75 @@ void edit(const char *user){
                 break;
             case KEY_F(5):
                 // Open previous entries
+                //Entries are saved in the format <user>_<date-time>.ent
+                {
+                    char filename[50] = {0};
+                    DIR *d;
+                    struct dirent *dir;
+                    if (!(d = opendir("."))){
+                        exit_journal(FILE_ERROR, "Could not open directory");
+                    }
+                    if (!(dir = readdir(d))){
+                        exit_journal(FILE_ERROR, "Could not read directory");
+                    }
+                    while ((dir = readdir(d)) != NULL) {
+                        if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") == 0) continue;
+                        if (dir->d_type != DT_DIR) {
+                            //Check if file is an entry
+                            if (strstr(dir->d_name, ".ent") != NULL){
+                                //Check if file is for the current user
+                                if (strstr(dir->d_name, user) != NULL){
+                                    //Open file
+                                    FILE *fp = fopen(dir->d_name, "r");
+                                    if (fp == NULL){
+                                        exit_journal(FILE_ERROR, "Could not open entry file");
+                                    }
+                                    //Read file
+                                    char file_entry[MAX_ENTRY_SIZE] = {0};
+                                    fread(file_entry, sizeof(char), MAX_ENTRY_SIZE, fp);
+                                    fclose(fp);
+                                    //Print file
+                                    //Clear entry from screen
+                                    for (int i = 0; i < MAX_ENTRY_SIZE; i++){
+                                        entry[i] = '\0';
+                                    }
+
+                                    // Copy file_entry to entry
+                                    for (int i = 0; i < strlen(file_entry); i++){
+                                        entry[i] = file_entry[i];
+                                    }
+
+                                    // Clear output area
+                                    int num_lines = LINES - 2;
+                                    for (int i = 0; i < num_lines; i++){
+                                        mvwprintw(edit_win, i + 1, 1, "                                                                                                    ");
+                                    }
+
+                                    // Print entry
+                                    strcpy(filename, dir->d_name);
+                                    mvwprintw(edit_win, 0, COLS + 2 - strlen(filename), "%s", filename);
+                                    print_entry(edit_win, entry, cursor);
+                                    wrefresh(edit_win);
+                                    //Wait for user input
+                                    getch();
+                                }
+                            }
+                        }
+                    }
+
+                    // Clear output area
+                    int num_lines = LINES - 2;
+                    for (int i = 0; i < num_lines; i++){
+                        mvwprintw(edit_win, i + 1, 1, "                                                                                                    ");
+                    }
+                    //Clear entry from screen
+                    for (int i = 0; i < MAX_ENTRY_SIZE; i++){
+                        entry[i] = '\0';
+                    }
+                    // Print entry
+                    print_entry(edit_win, entry, cursor);
+                    wrefresh(edit_win);
+                }
                 break;
 
             // Arrow key controls
