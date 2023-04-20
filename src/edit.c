@@ -15,52 +15,12 @@
 #define MAX_ENTRY_NAME_SIZE 54
 #define MAX_NUM_ENTRIES 1000
 
-void display_entry(char* filename, const char *user, const char *password, WINDOW *display_win, char *entry, unsigned int cursor){
-    //Open file
-    FILE *fp = fopen(filename, "r");
-    if (fp == NULL){
-        exit_journal(FILE_ERROR, "Could not open entry file");
-    }
-    //Read file
-    unsigned char file_entry[MAX_ENTRY_SIZE] = {0};
-    fread(file_entry, sizeof(char), MAX_ENTRY_SIZE, fp);
-
-    uint8_t pass[16] = {0};
-    for (int i = 0; i < strlen(password); i++){
-        pass[i] = password[i];
-    }
-    for (int i = 0; i < ((sizeof(file_entry) / 16) + 1); i++){
-        uint8_t *w; // AES expanded key
-        w = aes_init(sizeof(pass));
-
-        unsigned char *in = (unsigned char *)file_entry + (i * 16);
-        aes_key_expansion(pass, w);
-        unsigned char *out = file_entry + (i * 16);
-        aes_inv_cipher(in, out, w);
-    }
-    char* decrypted = (char*)file_entry;
-    fclose(fp);
-    //Print file
-    //Clear entry from screen
-    for (int i = 0; i < MAX_ENTRY_SIZE; i++){
-        entry[i] = '\0';
-    }
-
-    // Copy file_entry to entry
-    for (int i = 0; i < strlen(decrypted); i++){
-        entry[i] = file_entry[i];
-    }
-    // Clear output area
-    int num_lines = LINES - 2;
-    for (int i = 0; i < num_lines; i++){
-        mvwprintw(display_win, i + 1, 1, "                                                                                                    ");
-    }
-
-    // Print entry
-    mvwprintw(display_win, 0, COLS + 2 - strlen(filename), "%s", filename);
-    print_entry(display_win, entry, strlen(entry));
-    wrefresh(display_win);
-}
+//Private functions
+void display_entry(char* filename, const char *user, const char *password, WINDOW *display_win, char *entry, unsigned int cursor);
+void display_previous_entries(const char *user, const char *password, WINDOW *edit_win, char *entry, unsigned int cursor);
+void save_entry(const char *user, const char *password, char *entry, unsigned int* cursor, char *date_time);
+void print_entry(WINDOW* edit_win, char* entry, unsigned int cursor);
+void help(bool show_help);
 
 void edit(const char *user, const char *password){
     // Create window for edit screen
@@ -117,37 +77,7 @@ void edit(const char *user, const char *password){
                 break;
             case KEY_F(2):
                 // Save entry
-                {
-                    char filename[50] = {0};
-                    sprintf(filename, "%s_%s.ent", user, date_time);
-                    FILE *fp = fopen(filename, "w");
-                    if (fp == NULL) {
-                        exit_journal(FILE_ERROR, "Could not open an entry file");
-                    }
-
-                    uint8_t pass[16] = {0};
-                    for (int i = 0; i < strlen(password); i++){
-                        pass[i] = password[i];
-                    }
-                    
-                    unsigned char encrypted[MAX_ENTRY_SIZE] = {0};
-                    for (int i = 0; i < ((strlen(entry) / 16) + 1); i++){
-                        uint8_t *w; // AES expanded key
-                        w = aes_init(sizeof(pass));
-
-                        unsigned char *in = (unsigned char *)entry + (i * 16);
-                        aes_key_expansion(pass, w);
-                        unsigned char *out = encrypted + (i * 16);
-                        aes_cipher(in, out, w);
-                    }
-
-                    fwrite(encrypted, sizeof(encrypted), 1, fp);
-                    fclose(fp);
-                    for (int i = 0; i < MAX_ENTRY_SIZE; i++){
-                        entry[i] = '\0';
-                    }
-                    cursor = 0;
-                }
+                save_entry(user, password, entry, &cursor, date_time);
                 break;
             case KEY_F(3):
                 // Exit program
@@ -165,148 +95,7 @@ void edit(const char *user, const char *password){
             case KEY_F(5):
                 // Open previous entries
                 //Entries are saved in the format <user>_<date-time>.ent
-                {
-                    char filename[50] = {0};
-                    DIR *d;
-                    struct dirent *dir;
-                    if (!(d = opendir("."))){
-                        exit_journal(FILE_ERROR, "Could not open directory");
-                    }
-                    if (!(dir = readdir(d))){
-                        exit_journal(FILE_ERROR, "Could not read directory");
-                    }
-                    
-                    char entries[MAX_NUM_ENTRIES][MAX_ENTRY_NAME_SIZE] = {0};
-                    int entry_count = 0;
-
-                    while ((dir = readdir(d)) != NULL) {
-                        if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") == 0) continue;
-                        if (dir->d_type != DT_DIR) {
-                            unsigned int i = 0;
-                            for (i = 0; i < strlen(dir->d_name); i++){
-                                filename[i] = dir->d_name[i];
-                            }
-                            filename[i] = '\0';
-                            //Check if file is an entry
-                            if (strstr(filename, ".ent") != NULL){
-                                //Check if file is for the current user
-                                if (strstr(filename, user) != NULL){
-                                    //Add entry to list
-                                    strcpy(entries[entry_count], filename);
-                                    entry_count++;
-                                    for (int i = 0; i < filename[i] != '\0'; i++){
-                                        filename[i] = '\0';
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    closedir(d);
-                    
-                    bool show_selection_popup = true;
-                    int selected_entry = 0;
-                    int selected_entry_offset = 0;
-
-                    while(show_selection_popup){
-                        //Create a panel on the left side usiing half vertical space
-                        WINDOW *popup_win = newwin(LINES - 2, 3 * COLS / 4, 1, 0);
-                        box(popup_win, 0, 0);
-                        wrefresh(popup_win);
-
-                        //Print entry file names
-                        //If there are more than LINES - 4 entries, only print the entries that are in the current view
-                        int num_entries_to_print = LINES - 4;
-                        for(int i = selected_entry_offset; i < num_entries_to_print; i++){
-                            if (i == selected_entry){
-                                wattron(popup_win, A_REVERSE);
-                                mvwprintw(popup_win, i - selected_entry_offset + 1, 1, "%s", entries[i]);
-                                wattroff(popup_win, A_REVERSE);
-                            } else {
-                                mvwprintw(popup_win, i - selected_entry_offset + 1, 1, "%s", entries[i]);
-                            }
-                        }
-
-                        wrefresh(popup_win);
-
-                        //Get user input
-                        //Arrow keys move the cursor up and down
-                        //Right arrow opens the selected entry
-                        //Left arrow exits the popup
-                        //F5 exits the popup
-                        int ch = getch();
-
-                        switch (ch) {
-                            case KEY_UP:
-                                if (selected_entry > 0){
-                                    selected_entry--;
-                                    if (selected_entry < selected_entry_offset){
-                                        selected_entry_offset--;
-                                    }
-                                }
-                                break;
-                            case KEY_DOWN:
-                                if (selected_entry < entry_count - 1){
-                                    selected_entry++;
-                                    if (selected_entry > selected_entry_offset + num_entries_to_print - 1){
-                                        selected_entry_offset++;
-                                    }
-                                }
-                                break;
-                            case KEY_LEFT:
-                                show_selection_popup = false;
-                                break;
-                            case KEY_RIGHT:
-                                {
-                                    bool show_entry_popup = true;
-                                    while(show_entry_popup){
-                                        WINDOW *popup_win = newwin(LINES - 2, 3 * COLS / 4, 1, 0);
-
-                                        //Print entry
-                                        display_entry(entries[selected_entry], user, password, popup_win, entry, cursor);
-
-                                        wrefresh(popup_win);
-                                        box(popup_win, 0, 0);
-                                        wrefresh(popup_win);
-
-                                        mvwprintw(popup_win, LINES - 2, 1, "Press left arrow to exit");
-                                        wrefresh(popup_win);
-
-                                        //Print entry file name on top of popup
-                                        mvwprintw(popup_win, 0, 1, "%s", entries[selected_entry]);
-                                        wrefresh(popup_win);
-
-                                        int ch = getch();
-                                        switch (ch) {
-                                            case KEY_LEFT:
-                                                show_entry_popup = false;
-                                                break;
-                                        }
-                                    }
-                                }
-                                break;                        
-                        }
-                    }
-
-                    entry_count = 0;
-                    for(int i = 0; i < MAX_NUM_ENTRIES; i++){
-                        for(int j = 0; j < MAX_ENTRY_NAME_SIZE; j++){
-                            entries[i][j] = '\0';
-                        }
-                    }
-                    // Clear output area
-                    int num_lines = LINES - 2;
-                    for (int i = 0; i < num_lines; i++){
-                        mvwprintw(edit_win, i + 1, 1, "                                                                                                    ");
-                    }
-                    //Clear entry from screen
-                    for (int i = 0; i < MAX_ENTRY_SIZE; i++){
-                        entry[i] = '\0';
-                    }
-                    // Print entry
-                    print_entry(edit_win, entry, cursor);
-                    wrefresh(edit_win);
-                }
+                display_previous_entries(user, password, edit_win, entry, cursor);
                 break;
 
             // Arrow key controls
@@ -494,4 +283,227 @@ void help(bool show_help){
             }
         }
     }
+}
+
+void display_previous_entries(const char *user, const char *password, WINDOW *edit_win, char *entry, unsigned int cursor)
+{
+    char filename[50] = {0};
+    DIR *d;
+    struct dirent *dir;
+    if (!(d = opendir("."))){
+        exit_journal(FILE_ERROR, "Could not open directory");
+    }
+    if (!(dir = readdir(d))){
+        exit_journal(FILE_ERROR, "Could not read directory");
+    }
+
+    char entries[MAX_NUM_ENTRIES][MAX_ENTRY_NAME_SIZE] = {0};
+    int entry_count = 0;
+
+    while ((dir = readdir(d)) != NULL) {
+        if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") == 0) continue;
+        if (dir->d_type != DT_DIR) {
+            unsigned int i = 0;
+            for (i = 0; i < strlen(dir->d_name); i++){
+                filename[i] = dir->d_name[i];
+            }
+            filename[i] = '\0';
+            //Check if file is an entry
+            if (strstr(filename, ".ent") != NULL){
+                //Check if file is for the current user
+                if (strstr(filename, user) != NULL){
+                    //Add entry to list
+                    strcpy(entries[entry_count], filename);
+                    entry_count++;
+                    for (int i = 0; i < filename[i] != '\0'; i++){
+                        filename[i] = '\0';
+                    }
+                }
+            }
+        }
+    }
+
+    closedir(d);
+
+    bool show_selection_popup = true;
+    int selected_entry = 0;
+    int selected_entry_offset = 0;
+
+    while(show_selection_popup){
+        //Create a panel on the left side usiing half vertical space
+        WINDOW *popup_win = newwin(LINES - 2, 3 * COLS / 4, 1, 0);
+        box(popup_win, 0, 0);
+        wrefresh(popup_win);
+
+        //Print entry file names
+        //If there are more than LINES - 4 entries, only print the entries that are in the current view
+        int num_entries_to_print = LINES - 4;
+        for(int i = selected_entry_offset; i < num_entries_to_print; i++){
+            if (i == selected_entry){
+                wattron(popup_win, A_REVERSE);
+                mvwprintw(popup_win, i - selected_entry_offset + 1, 1, "%s", entries[i]);
+                wattroff(popup_win, A_REVERSE);
+            } else {
+                mvwprintw(popup_win, i - selected_entry_offset + 1, 1, "%s", entries[i]);
+            }
+        }
+
+        wrefresh(popup_win);
+
+        //Get user input
+        //Arrow keys move the cursor up and down
+        //Right arrow opens the selected entry
+        //Left arrow exits the popup
+        //F5 exits the popup
+        int ch = getch();
+
+        switch (ch) {
+            case KEY_UP:
+                if (selected_entry > 0){
+                    selected_entry--;
+                    if (selected_entry < selected_entry_offset){
+                        selected_entry_offset--;
+                    }
+                }
+                break;
+            case KEY_DOWN:
+                if (selected_entry < entry_count - 1){
+                    selected_entry++;
+                    if (selected_entry > selected_entry_offset + num_entries_to_print - 1){
+                        selected_entry_offset++;
+                    }
+                }
+                break;
+            case KEY_LEFT:
+                show_selection_popup = false;
+                break;
+            case KEY_RIGHT:
+                {
+                    bool show_entry_popup = true;
+                    while(show_entry_popup){
+                        WINDOW *popup_win = newwin(LINES - 2, 3 * COLS / 4, 1, 0);
+
+                        //Print entry
+                        display_entry(entries[selected_entry], user, password, popup_win, entry, cursor);
+
+                        wrefresh(popup_win);
+                        box(popup_win, 0, 0);
+                        wrefresh(popup_win);
+
+                        mvwprintw(popup_win, LINES - 2, 1, "Press left arrow to exit");
+                        wrefresh(popup_win);
+
+                        //Print entry file name on top of popup
+                        mvwprintw(popup_win, 0, 1, "%s", entries[selected_entry]);
+                        wrefresh(popup_win);
+
+                        int ch = getch();
+                        switch (ch) {
+                            case KEY_LEFT:
+                                show_entry_popup = false;
+                                break;
+                        }
+                    }
+                }
+                break;                        
+        }
+    }
+
+    entry_count = 0;
+    for(int i = 0; i < MAX_NUM_ENTRIES; i++){
+        for(int j = 0; j < MAX_ENTRY_NAME_SIZE; j++){
+            entries[i][j] = '\0';
+        }
+    }
+    // Clear output area
+    int num_lines = LINES - 2;
+    for (int i = 0; i < num_lines; i++){
+        mvwprintw(edit_win, i + 1, 1, "                                                                                                    ");
+    }
+    //Clear entry from screen
+    for (int i = 0; i < MAX_ENTRY_SIZE; i++){
+        entry[i] = '\0';
+    }
+    // Print entry
+    print_entry(edit_win, entry, cursor);
+    wrefresh(edit_win);
+}
+
+void save_entry(const char *user, const char *password, char *entry, unsigned int* cursor, char *date_time){
+    char filename[50] = {0};
+    sprintf(filename, "%s_%s.ent", user, date_time);
+    FILE *fp = fopen(filename, "w");
+    if (fp == NULL) {
+        exit_journal(FILE_ERROR, "Could not open an entry file");
+    }
+
+    uint8_t pass[16] = {0};
+    for (int i = 0; i < strlen(password); i++){
+        pass[i] = password[i];
+    }
+
+    unsigned char encrypted[MAX_ENTRY_SIZE] = {0};
+    for (int i = 0; i < ((strlen(entry) / 16) + 1); i++){
+        uint8_t *w; // AES expanded key
+        w = aes_init(sizeof(pass));
+
+        unsigned char *in = (unsigned char *)entry + (i * 16);
+        aes_key_expansion(pass, w);
+        unsigned char *out = encrypted + (i * 16);
+        aes_cipher(in, out, w);
+    }
+
+    fwrite(encrypted, sizeof(encrypted), 1, fp);
+    fclose(fp);
+    for (int i = 0; i < MAX_ENTRY_SIZE; i++){
+        entry[i] = '\0';
+    }
+    *cursor = 0;
+}
+
+void display_entry(char* filename, const char *user, const char *password, WINDOW *display_win, char *entry, unsigned int cursor){
+    //Open file
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL){
+        exit_journal(FILE_ERROR, "Could not open entry file");
+    }
+    //Read file
+    unsigned char file_entry[MAX_ENTRY_SIZE] = {0};
+    fread(file_entry, sizeof(char), MAX_ENTRY_SIZE, fp);
+
+    uint8_t pass[16] = {0};
+    for (int i = 0; i < strlen(password); i++){
+        pass[i] = password[i];
+    }
+    for (int i = 0; i < ((sizeof(file_entry) / 16) + 1); i++){
+        uint8_t *w; // AES expanded key
+        w = aes_init(sizeof(pass));
+
+        unsigned char *in = (unsigned char *)file_entry + (i * 16);
+        aes_key_expansion(pass, w);
+        unsigned char *out = file_entry + (i * 16);
+        aes_inv_cipher(in, out, w);
+    }
+    char* decrypted = (char*)file_entry;
+    fclose(fp);
+    //Print file
+    //Clear entry from screen
+    for (int i = 0; i < MAX_ENTRY_SIZE; i++){
+        entry[i] = '\0';
+    }
+
+    // Copy file_entry to entry
+    for (int i = 0; i < strlen(decrypted); i++){
+        entry[i] = file_entry[i];
+    }
+    // Clear output area
+    int num_lines = LINES - 2;
+    for (int i = 0; i < num_lines; i++){
+        mvwprintw(display_win, i + 1, 1, "                                                                                                    ");
+    }
+
+    // Print entry
+    mvwprintw(display_win, 0, COLS + 2 - strlen(filename), "%s", filename);
+    print_entry(display_win, entry, strlen(entry));
+    wrefresh(display_win);
 }
