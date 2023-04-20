@@ -25,7 +25,7 @@ void aes_key_expansion(uint8_t *key, uint8_t *w);
 void aes_inv_cipher(uint8_t *in, uint8_t *out, uint8_t *w);
 void aes_cipher(uint8_t *in, uint8_t *out, uint8_t *w);
 
-void pass2key(const char *pass, uint8_t *key);
+void pass2key(char *pass, uint8_t *key);
 
 #ifdef AES_IMPLEMENTATION
 // Lookup table for multiplication in GF(2^8)
