@@ -2,15 +2,15 @@
 
 A simple encrypted jounarling book
 
-## NOTE: THIS IS NOT ENCRYPTED AS OF YET. WORK IN PROGRESS
+## This is now Encrypted. Further testing on security needs to be done
 
 ### TODOs
 
 - [x] Login system
 - [x] Typing in window
 - [x] Basic cursor
-- [ ] Saving buffer
-- [ ] Encrypt saved buffer
-- [ ] Decrypt buffer with current password
-- [ ] See old entries
-- [ ] General total encryption
+- [x] Saving buffer
+- [x] Encrypt saved buffer
+- [x] Decrypt buffer with current password
+- [x] See old entries
+- [x] General total encryption
