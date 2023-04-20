@@ -11,7 +11,7 @@
 
 #define SHA256_BLOCK_SIZE 32
 
-bool login(char *user){
+bool login(char *user, char *pass){
     // Create window for login screen
     int starty = (LINES - LOGIN_SCREEN_HEIGHT) / 2;
     int startx = (COLS - LOGIN_SCREEN_WIDTH) / 2;
@@ -24,8 +24,8 @@ bool login(char *user){
 
     // Input fields for username and password
     // secure zero initialize the buffers
-    char username[32] = {0};
-    char password[32] = {0};
+    char username[16] = {0};
+    char password[16] = {0};
     int current_field = 0; // 0 for username field, 1 for password field
 
     // Loop for user input
@@ -34,8 +34,8 @@ bool login(char *user){
     while (running) {
         // Print username field
         const char *login_button = "[Login]";
-        const char *username_field = "                               ";
-        const char *password_field = "*******************************";
+        const char *username_field = "                ";
+        const char *password_field = "****************";
 
         //X Center the fields
         int username_field_x = (LOGIN_SCREEN_WIDTH - strlen(username_field)) / 2;
@@ -154,6 +154,7 @@ bool login(char *user){
         // If match, set found to true
         if (strcmp(username, username_hash) == 0 && memcmp(hash, hash_bytes, SHA256_BLOCK_SIZE) == 0) {
             strcpy(user, username);
+            strcpy(pass, password);
             found = true;
             running = false;
             break;

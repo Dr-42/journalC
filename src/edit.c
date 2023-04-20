@@ -2,14 +2,18 @@
 #include "exit_journal.h"
 #include <curses.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <dirent.h>
 
+#define AES_IMPLEMENTATION
+#include "aes.h"
+
 #define MAX_ENTRY_SIZE 1024*1024
 
-void edit(const char *user){
+void edit(const char *user, const char *password){
     // Create window for edit screen
     const int starty = 0;
     const int startx = 1;
@@ -71,7 +75,24 @@ void edit(const char *user){
                     if (fp == NULL) {
                         exit_journal(FILE_ERROR, "Could not open an entry file");
                     }
-                    fprintf(fp, "%s", entry);
+
+                    uint8_t pass[16] = {0};
+                    for (int i = 0; i < strlen(password); i++){
+                        pass[i] = password[i];
+                    }
+                    
+                    unsigned char encrypted[MAX_ENTRY_SIZE] = {0};
+                    for (int i = 0; i < ((strlen(entry) / 16) + 1); i++){
+                        uint8_t *w; // AES expanded key
+                        w = aes_init(sizeof(pass));
+
+                        unsigned char *in = (unsigned char *)entry + (i * 16);
+                        aes_key_expansion(pass, w);
+                        unsigned char *out = encrypted + (i * 16);
+                        aes_cipher(in, out, w);
+                    }
+
+                    fwrite(encrypted, sizeof(encrypted), 1, fp);
                     fclose(fp);
                     for (int i = 0; i < MAX_ENTRY_SIZE; i++){
                         entry[i] = '\0';
@@ -123,8 +144,23 @@ void edit(const char *user){
                                         exit_journal(FILE_ERROR, "Could not open entry file");
                                     }
                                     //Read file
-                                    char file_entry[MAX_ENTRY_SIZE] = {0};
+                                    unsigned char file_entry[MAX_ENTRY_SIZE] = {0};
                                     fread(file_entry, sizeof(char), MAX_ENTRY_SIZE, fp);
+
+                                    uint8_t pass[16] = {0};
+                                    for (int i = 0; i < strlen(password); i++){
+                                        pass[i] = password[i];
+                                    }
+                                    for (int i = 0; i < ((sizeof(file_entry) / 16) + 1); i++){
+                                        uint8_t *w; // AES expanded key
+                                        w = aes_init(sizeof(pass));
+
+                                        unsigned char *in = (unsigned char *)file_entry + (i * 16);
+                                        aes_key_expansion(pass, w);
+                                        unsigned char *out = file_entry + (i * 16);
+                                        aes_inv_cipher(in, out, w);
+                                    }
+                                    char* decrypted = (char*)file_entry;
                                     fclose(fp);
                                     //Print file
                                     //Clear entry from screen
@@ -133,10 +169,9 @@ void edit(const char *user){
                                     }
 
                                     // Copy file_entry to entry
-                                    for (int i = 0; i < strlen(file_entry); i++){
+                                    for (int i = 0; i < strlen(decrypted); i++){
                                         entry[i] = file_entry[i];
                                     }
-
                                     // Clear output area
                                     int num_lines = LINES - 2;
                                     for (int i = 0; i < num_lines; i++){
