@@ -8,6 +8,7 @@
 #include <time.h>
 #include <dirent.h>
 #include <pthread.h>
+#include <sys/stat.h>
 
 #define AES_IMPLEMENTATION
 #include "aes.h"
@@ -300,10 +301,10 @@ void help(bool show_help){
 
 void display_previous_entries(const char *user, const char *password, WINDOW *edit_win, char *entry, unsigned int cursor)
 {
-    char filename[50] = {0};
+    char filename[60] = {0};
     DIR *d;
     struct dirent *dir;
-    if (!(d = opendir("."))){
+    if (!(d = opendir("entries"))){
         exit_journal(FILE_ERROR, "Could not open directory");
     }
     if (!(dir = readdir(d))){
@@ -316,23 +317,21 @@ void display_previous_entries(const char *user, const char *password, WINDOW *ed
     while ((dir = readdir(d)) != NULL) {
         if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") == 0) continue;
         if (dir->d_type != DT_DIR) {
-            unsigned int i = 0;
-            for (i = 0; i < strlen(dir->d_name); i++){
-                filename[i] = dir->d_name[i];
-            }
-            filename[i] = '\0';
+
+            char* total_path = malloc(strlen("entries/") + strlen(dir->d_name) + 1);
+            strcpy(total_path, "entries/");
+            strcat(total_path, dir->d_name);
+            
             //Check if file is an entry
-            if (strstr(filename, ".ent") != NULL){
+            if (strstr(total_path, ".ent") != NULL){
                 //Check if file is for the current user
-                if (strstr(filename, user) != NULL){
+                if (strstr(total_path, user) != NULL){
                     //Add entry to list
-                    strcpy(entries[entry_count], filename);
+                    strcpy(entries[entry_count], total_path);
                     entry_count++;
-                    for (int i = 0; i < filename[i] != '\0'; i++){
-                        filename[i] = '\0';
-                    }
                 }
             }
+            free(total_path);
         }
     }
 
@@ -481,8 +480,15 @@ void encrypt_multithreaded(char *entry, unsigned char *encrypted, uint8_t *pass,
 
 
 void save_entry(const char *user, const char *password, char *entry, unsigned int* cursor, char *date_time){
-    char filename[50] = {0};
-    sprintf(filename, "%s_%s.ent", user, date_time);
+    //Create entries folder if it doesn't exist
+    struct stat st = {0};
+    if (stat("entries", &st) == -1) {
+        mkdir("entries", 0700);
+    }
+
+    //Create entry file
+    char filename[60] = {0};
+    sprintf(filename, "entries/%s_%s.ent", user, date_time);
     FILE *fp = fopen(filename, "w");
     if (fp == NULL) {
         exit_journal(FILE_ERROR, "Could not open an entry file");
