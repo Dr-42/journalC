@@ -231,26 +231,29 @@ void edit(const char *user, const char *password){
 
 // Print entry to the screen
 void print_entry(WINDOW *edit_win, char *entry, unsigned int cursor){
-    int x = 1;
-    int y = 1;
+
+    const uint32_t X_OFFSET = 3;
+    const uint32_t Y_OFFSET = 2;
+    int x = X_OFFSET;
+    int y = Y_OFFSET;
     int i = 0;
     while (entry[i] != '\0') {
         if (entry[i] == '\n') {
             y++;
-            x = 1;
+            x = X_OFFSET;
         } else {
             mvwprintw(edit_win, y, x, "%c", entry[i]);
             x++;
         }
         i++;
     }
-    x = 1;
-    y = 1;
+    x = X_OFFSET;
+    y = Y_OFFSET;
     // Print cursor
     for (int i = 0; i < cursor; i++) {
         if (entry[i] == '\n') {
             y++;
-            x = 1;
+            x = X_OFFSET;
         } else {
             x++;
         }
@@ -299,9 +302,7 @@ void help(bool show_help){
     }
 }
 
-void display_previous_entries(const char *user, const char *password, WINDOW *edit_win, char *entry, unsigned int cursor)
-{
-    char filename[60] = {0};
+void display_previous_entries(const char *user, const char *password, WINDOW *edit_win, char *entry, unsigned int cursor){
     DIR *d;
     struct dirent *dir;
     if (!(d = opendir("entries"))){
@@ -351,12 +352,29 @@ void display_previous_entries(const char *user, const char *password, WINDOW *ed
         //If there are more than LINES - 4 entries, only print the entries that are in the current view
         int num_entries_to_print = LINES - 4;
         for(int i = selected_entry_offset; i < num_entries_to_print; i++){
+            #include <stdio.h>
+
+            char username[32];
+            char date[11];
+            char time[9];
+            //entries/admin_2023-04-21 18:44:50.ent
+            sscanf(entries[i], "entries/%[^_]_%[^ ] %[^.].ent", username, date, time);
+
             if (i == selected_entry){
                 wattron(popup_win, A_REVERSE);
-                mvwprintw(popup_win, i - selected_entry_offset + 1, 1, "%s", entries[i]);
+                mvwprintw(popup_win, i - selected_entry_offset + 1, 1, "Username: %s Date: %s Time: %s", username, date, time);
                 wattroff(popup_win, A_REVERSE);
             } else {
-                mvwprintw(popup_win, i - selected_entry_offset + 1, 1, "%s", entries[i]);
+                mvwprintw(popup_win, i - selected_entry_offset + 1, 1, "%03d> %s at %s", i+1, date, time);
+            }
+
+            //Clear username and date and time
+            memset(username, 0, sizeof(username));
+            memset(date, 0, sizeof(date));
+            memset(time, 0, sizeof(time));
+
+            if (i == entry_count - 1){
+                break;
             }
         }
 
@@ -403,11 +421,16 @@ void display_previous_entries(const char *user, const char *password, WINDOW *ed
                         box(popup_win, 0, 0);
                         wrefresh(popup_win);
 
-                        mvwprintw(popup_win, LINES - 2, 1, "Press left arrow to exit");
-                        wrefresh(popup_win);
-
                         //Print entry file name on top of popup
-                        mvwprintw(popup_win, 0, 1, "%s", entries[selected_entry]);
+                        char username[32];
+                        char date[11];
+                        char time[9];
+                        //entries/admin_2023-04-21 18:44:50.ent
+                        sscanf(entries[selected_entry], "entries/%[^_]_%[^ ] %[^.].ent", username, date, time);
+
+                        wattron(popup_win, A_BOLD);
+                        mvwprintw(popup_win, 0, 1, "Date: %s Time: %s User: %s", date, time, username);
+                        wattroff(popup_win, A_BOLD);
                         wrefresh(popup_win);
 
                         int ch = getch();
@@ -547,10 +570,7 @@ void display_entry(char* filename, const char *user, const char *password, WINDO
         entry[i] = file_entry[i];
     }
     // Clear output area
-    int num_lines = LINES - 2;
-    for (int i = 0; i < num_lines; i++){
-        mvwprintw(display_win, i + 1, 1, "                                                                                                    ");
-    }
+    wclear(display_win);
 
     // Print entry
     mvwprintw(display_win, 0, COLS + 2 - strlen(filename), "%s", filename);
