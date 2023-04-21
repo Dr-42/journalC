@@ -453,6 +453,7 @@ void *encrypt_thread(void *arg) {
         aes_key_expansion(data->pass, w);
         unsigned char *out = data->encrypted + (i * 16);
         aes_cipher(in, out, w);
+        aes_free(w);
     }
 
     return NULL;
@@ -531,6 +532,7 @@ void display_entry(char* filename, const char *user, const char *password, WINDO
         aes_key_expansion(pass, w);
         unsigned char *out = file_entry + (i * 16);
         aes_inv_cipher(in, out, w);
+        aes_free(w);
     }
     char* decrypted = (char*)file_entry;
     fclose(fp);

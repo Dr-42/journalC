@@ -679,6 +679,13 @@ uint8_t *aes_init(size_t key_size) {
 }
 
 /*
+ * Free memory allocated for expanded key
+ */
+void aes_free(uint8_t *w) {
+	free(w);
+}
+
+/*
  * Performs the AES cipher operation
  */
 void aes_cipher(uint8_t *in, uint8_t *out, uint8_t *w) {
