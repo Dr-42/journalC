@@ -15,3 +15,7 @@ A simple encrypted jounarling book
 - [x] See old entries
 - [x] General total encryption
 - [x] Multithreaded encryption
+
+
+https://user-images.githubusercontent.com/64161204/233704267-0177d848-35ee-4624-8a37-c279a0b612e2.mp4
+
