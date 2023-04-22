@@ -277,7 +277,7 @@ void help(bool show_help){
             // Create window for help menu
             const int starty = 2;
             const int startx = (COLS - 40) / 2;
-            WINDOW *help_menu = newwin(9, 40, starty, startx);
+            WINDOW *help_menu = newwin(20, 40, starty, startx);
             box(help_menu, 0, 0);
 
             // Print help menu title
@@ -291,6 +291,18 @@ void help(bool show_help){
             mvwprintw(help_menu, 4, 2, "F3: Exit Program");
             mvwprintw(help_menu, 5, 2, "F4: Clear Text Input Area");
             mvwprintw(help_menu, 6, 2, "F5: Open Previous Entries");
+            mvwprintw(help_menu, 7, 2, "--------------------------------");
+            mvwprintw(help_menu, 8, 2, "Inside Text Input Area:");
+            mvwprintw(help_menu, 9, 2, "Arrow Keys: Move Cursor");
+            mvwprintw(help_menu, 10, 2, "Backspace: Delete Character");
+            mvwprintw(help_menu, 11, 2, "Enter: New Line");
+            mvwprintw(help_menu, 12, 2, "Any Other Key: Type Character");
+            mvwprintw(help_menu, 13, 2, "--------------------------------");
+            mvwprintw(help_menu, 14, 2, "Inside Previous Entries:");
+            mvwprintw(help_menu, 15, 2, "Up/Down Arrow Keys: Move Cursor");
+            mvwprintw(help_menu, 16, 2, "Right Arrow: Open Entry");
+            mvwprintw(help_menu, 17, 2, "Left Arrow: Close Entry");
+            mvwprintw(help_menu, 18, 2, "Left Arrow: Close Entries List");
 
             // Refresh and show help menu
             wrefresh(help_menu);
