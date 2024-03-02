@@ -91,7 +91,9 @@ void edit(const char *user, const char *password){
                 break;
             case KEY_F(2):
                 // Save entry
-                save_entry(user, password, entry, &cursor, date_time);
+                if (strlen(entry) > 0) {
+                    save_entry(user, password, entry, &cursor, date_time);
+                }
                 break;
             case KEY_F(3):
                 // Exit program
