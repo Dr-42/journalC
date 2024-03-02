@@ -320,7 +320,7 @@ void display_previous_entries(const char *user, const char *password, WINDOW *ed
     DIR *d;
     struct dirent *dir;
     if (!(d = opendir("entries"))){
-        exit_journal(FILE_ERROR, "Could not open directory");
+        return;
     }
     if (!(dir = readdir(d))){
         exit_journal(FILE_ERROR, "Could not read directory");
