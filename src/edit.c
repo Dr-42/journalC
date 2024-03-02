@@ -233,7 +233,6 @@ void edit(const char *user, const char *password){
 
 // Print entry to the screen
 void print_entry(WINDOW *edit_win, char *entry, unsigned int cursor){
-
     const uint32_t X_OFFSET = 3;
     const uint32_t Y_OFFSET = 2;
     int x = X_OFFSET;
@@ -262,6 +261,11 @@ void print_entry(WINDOW *edit_win, char *entry, unsigned int cursor){
             x = X_OFFSET;
         } else {
             x++;
+        }
+
+        if (x == COLS - 5) {
+            y++;
+            x = X_OFFSET;
         }
     }
     wattron(edit_win, A_STANDOUT);
