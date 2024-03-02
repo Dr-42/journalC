@@ -247,6 +247,10 @@ void print_entry(WINDOW *edit_win, char *entry, unsigned int cursor){
             mvwprintw(edit_win, y, x, "%c", entry[i]);
             x++;
         }
+        if (x == COLS - 5) {
+            y++;
+            x = X_OFFSET;
+        }
         i++;
     }
     x = X_OFFSET;
@@ -336,7 +340,7 @@ void display_previous_entries(const char *user, const char *password, WINDOW *ed
             char* total_path = malloc(strlen("entries/") + strlen(dir->d_name) + 1);
             strcpy(total_path, "entries/");
             strcat(total_path, dir->d_name);
-            
+
             //Check if file is an entry
             if (strstr(total_path, ".ent") != NULL){
                 //Check if file is for the current user
