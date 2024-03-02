@@ -76,7 +76,7 @@ void edit(const char *user, const char *password){
         struct tm tm = *localtime(&t);
         char date_time[50] = {0};
         sprintf(date_time, "%04d-%02d-%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-        mvwprintw(edit_win, LINES - 1, COLS - 20, "%s", date_time);
+        mvwprintw(edit_win, LINES - 1, COLS - strlen(date_time) - 3, "%s", date_time);
         wrefresh(edit_win);
 
         // Get user input
