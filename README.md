@@ -1,6 +1,6 @@
 # journalC
 
-A simple encrypted jounarling book
+A simple encrypted journaling book
 
 ## This is now Encrypted. Further testing on security needs to be done
 
