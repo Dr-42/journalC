@@ -1,5 +1,6 @@
 [build]
 compiler = "gcc"
+cstandard = "gnu11"
 
 [[targets]]
 name = "main"
